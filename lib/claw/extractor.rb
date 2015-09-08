@@ -80,7 +80,7 @@ class Extractor
   # Replaces link brackets so that they couldn't be taken for quotation marker.
   # Splits line in two if splitter pattern preceded by some text on the same
   # line (done only for 'On <date> <person> wrote:' pattern).
-  def self.preprocess(message, delimiter)
+  def self.preprocess(message, delimiter, wrap_splitters = true)
     message = message.gsub RE_LINK do
       match = Regexp.last_match
       offset = message.index(match[0])
@@ -89,15 +89,19 @@ class Extractor
       newline_index.nil? || message[newline_index + 1] == '>' ? match[0] : "@@#{match[1]}@@"
     end
 
-    message.gsub Regexp.new(RE_ON_DATE_SMB_WROTE) do
-      match = Regexp.last_match
-      offset = match.begin(0)
-      if offset && offset > 0 && message[offset - 1] != "\n"
-        delimiter + match[0]
-      else
-        match[0]
+    if wrap_splitters
+      message = message.gsub Regexp.new(RE_ON_DATE_SMB_WROTE) do
+        match = Regexp.last_match
+        offset = match.begin(0)
+        if offset && offset > 0 && message[offset - 1] != "\n"
+          delimiter + match[0]
+        else
+          match[0]
+        end
       end
     end
+
+    message
   end
 
   # Mark message lines with markers to distinguish quotation lines.
